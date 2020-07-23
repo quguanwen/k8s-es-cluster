@@ -10,6 +10,8 @@ https://github.com/pires/kubernetes-elasticsearch-cluster/tree/master
 
 # 搭配方式
 3个master，pod反亲和，标签节点亲和，hostpath
+
 2个data，pod反亲和，标签节点亲和，hostpath
+
 2个ingest，pod反亲和，标签节点亲和，hostpath
 
