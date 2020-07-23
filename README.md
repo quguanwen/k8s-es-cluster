@@ -15,3 +15,8 @@ https://github.com/pires/kubernetes-elasticsearch-cluster/tree/master
 
 2个ingest，pod反亲和，标签节点亲和，hostpath
 
+# 命名空间
+es和kibana在default，fluentd在kube-system
+
+kibana，fluentd，es-curator这三个的cm都需要根据不同命名空间修改es的host地址，当前是elasticsearch.default.svc.cluster.local
+
