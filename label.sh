@@ -11,3 +11,4 @@ kubectl  label node master03 beta.kubernetes.io/fluentd-ds-ready=true
 kubectl  label node node01 beta.kubernetes.io/fluentd-ds-ready=true
 kubectl  label node node02 beta.kubernetes.io/fluentd-ds-ready=true
 kubectl  label node node03 beta.kubernetes.io/fluentd-ds-ready=true
+kubectl  label node <nodename> beta.kubernetes.io/fluentd-ds-ready: "true"
