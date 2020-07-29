@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-data
+  namespace: {{ .Values.namespace }}
+  labels:
+    component: elasticsearch
+    role: data
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: data    
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: data
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - data
+            topologyKey: "kubernetes.io/hostname"
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: es/data
+                operator: In
+                values:
+                - "true"
+      initContainers:
+      - name: init-sysctl
+        image: {{ .Values.busybox.image }}:{{ .Values.busybox.tag }}
+        command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        securityContext:
+          privileged: true
+      containers:
+      - name: es-data
+        image: {{ .Values.image }}:{{ .Values.tag }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CLUSTER_NAME
+          value: {{ .Values.es.env.clusterName }}
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "false"
+        - name: HTTP_ENABLE
+          value: "true"
+        - name: ES_JAVA_OPTS
+          value: -Xms{{ .Values.es.env.esJavaOps }}m -Xmx{{ .Values.es.env.esJavaOps }}m
+        - name: PROCESSORS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        resources:
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          timeoutSeconds: {{ .Values.containers.livenessProbe.timeoutSeconds }}
+          initialDelaySeconds: {{ .Values.containers.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.containers.livenessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.containers.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: http
+          timeoutSeconds: {{ .Values.containers.livenessProbe.timeoutSeconds }}
+          initialDelaySeconds: {{ .Values.containers.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.containers.livenessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.containers.livenessProbe.failureThreshold }}
+      {{- if .Values.persistence }}
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      volumes:
+          - name: "storage"
+            hostPath:
+              path: {{ .Values.volumes.hostPath.path }}
+      {{- end -}}
+

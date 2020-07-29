@@ -1,0 +1,48 @@
+namespace:
+  "default"
+
+busybox:
+  image: "busybox"
+  tag: "1.27.2"
+
+image: "quay.io/pires/docker-elasticsearch-kubernetes"
+tag: "6.3.2"
+
+resources:
+  requests:
+    cpu: 0.25
+    memory: 1Gi
+  limits:
+    cpu: 1
+    memory: 2Gi
+
+containers:
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 20
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 20
+
+persistence: false
+
+volumes:
+  hostPath:
+    path: /data/es-master 
+
+es:
+  env:
+    clusterName: myesdb
+    esJavaOps: 256
+  gc:
+    days: 1
+    image: quay.io/pires/docker-elasticsearch-curator
+    tag: 5.5.1
+
+kibana:
+  image: docker.elastic.co/kibana/kibana-oss
+  tag: 6.3.2
